@@ -11,15 +11,24 @@ function App() {
   const { units } = useSelector((state: RootState) => state.weather);
   const { location } = useSelector((state: RootState) => state.weather);
   const [weather, setWeather] = useState<any>({});
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [properLocation, setProperLocation] = useState<string>("New York City");
+  const [timeOfDay, setTimeOfDay] = useState<string>("");
   const fetchWeather = async () => {
-    setLoading(true);
     try {
       const response = await axios.get(
         `https://api.openweathermap.org/data/2.5/weather?q=${location}&APPID=${API_KEY}&units=${units}`
       );
-      console.log(response);
       setWeather(response);
+      setProperLocation(response.data.name);
+      if (
+        Date.now() / 1000 > response.data.sys.sunset ||
+        Date.now() / 1000 < response.data.sys.sunrise
+      ) {
+        setTimeOfDay("night");
+      } else {
+        setTimeOfDay("day");
+      }
     } catch (error) {
       console.log(error);
     }
@@ -28,12 +37,14 @@ function App() {
   useEffect(() => {
     fetchWeather();
   }, [location]);
-  if (loading) return "loading...";
+  if (!weather.data && loading) return <>loading...</>;
   return (
-    <div className="App">
-      <h1>Weather App</h1>
-      <h2>Temperature: {weather.data.main.temp}</h2>
+    <div className={timeOfDay === "night" ? "dark" : "light"}>
       <CityInput />
+      <h1>Weather App</h1>
+      <h2>{properLocation}</h2>
+      <h2>Temperature: {weather.data.main.temp}</h2>
+      <h2>time of day: {timeOfDay}</h2>
     </div>
   );
 }
